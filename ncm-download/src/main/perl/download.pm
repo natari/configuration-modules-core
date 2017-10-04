@@ -65,7 +65,7 @@ my $_cached_gss;
 sub get_gss_token
 {
     my $self = shift;
-
+    my $tree = shift;
     # Return module wide cache value
     return $_cached_gss if $_cached_gss;
 
@@ -80,7 +80,9 @@ sub get_gss_token
 
     # Assume "kinit" is in the PATH.
     my $errs = "";
-    my $proc = CAF::Process->new(["kinit", "-k"],
+    my @kinit_cmd = ("kinit", "-k");
+    push(@kinit_cmd, split(/ /, $tree->{kinit_args})) if ($tree->{kinit_args});
+    my $proc = CAF::Process->new(\@kinit_cmd,
                                  stderr => \$errs,
                                  log => $self,
                                  keeps_state => 1);
@@ -122,7 +124,7 @@ sub Configure
         $file->{head_timeout} = $tree->{head_timeout};
 
         if ($file->{gssapi}) {
-            $file->{gss_ccache} = $self->get_gss_token();
+            $file->{gss_ccache} = $self->get_gss_token($tree);
             # immediate failure
             return 0 if ! $file->{gss_ccache};
         }
